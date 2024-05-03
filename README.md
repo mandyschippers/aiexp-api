@@ -1,2 +1,2 @@
-# wingspan-api
-Wingspan Python Flask API
+# aiexp-api
+AI Exp Python Flask API

@@ -31,11 +31,13 @@ class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hand = db.relationship('DeckCard', secondary=hand_association, backref=db.backref('games', lazy=True))
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     points = db.Column(db.Integer)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128))
+    players = db.relationship('Player', backref='user', lazy=True)
 
 class DeckCard(db.Model):
     id = db.Column(db.Integer, primary_key=True)

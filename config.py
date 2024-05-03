@@ -1,5 +1,5 @@
 class Config:
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/wingspan'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5433/aiexp'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = 'not_so_secret_key'
 
