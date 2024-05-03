@@ -14,7 +14,7 @@ def create_app(config_class='config.Config'):
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from models import Game, Player, User, DeckCard, Food
+    from models import Conversation
 
     CORS(app)
     JWTManager(app)
