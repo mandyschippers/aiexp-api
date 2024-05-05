@@ -4,6 +4,9 @@ from . import api
 from models import Conversation, create_conversation, get_conversations, create_segment, update_segment_reply
 from config import Config
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.memory import ChatMessageHistory
 
 @api.route('/hello')
 class HelloWorld(Resource):
@@ -41,17 +44,45 @@ class Message(Resource):
         conversation_id = data.get('conversation_id')
         message = data.get('message')
         message_history = data.get('message_history')
+        #assemble chat history from segments
+        history = create_chain_from_segments(message_history, message)
         #create the next segment in the conversation
         segment = create_segment(conversation_id, message)
+        #call the LLM
         llm = ChatOpenAI(api_key=Config.OPENAI_API_KEY)
-        response = llm.invoke(message)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You are a helpful assistant. Answer all questions to the best of your ability.",
+                ),
+                MessagesPlaceholder(variable_name="messages"),
+            ]
+        )
+        chain = prompt | llm
+        response = chain.invoke(
+            {
+                "messages": history.messages,
+            }
+        )
         #save response.content to the segment
         update_segment_reply(segment.id, response.content)
         return {'received message': data.get('message', 'no message was provided') + 'with reply: ' + response.content + 'from segment ' + str(segment.id) + ' in conversation ' + str(conversation_id)}
-    
+
 @api.route('/get_segments/<int:id>', methods=['GET'])
 class GetSegments(Resource):
     def get(self, id):
         conversation = Conversation.query.get(id)
         segments = conversation.segments
         return [{'id': segment.id, 'message': segment.message, 'reply': segment.reply} for segment in segments]
+    
+def create_chain_from_segments(segments, message):
+    history = ChatMessageHistory()
+    if segments:
+        for segment in segments:
+            history.add_user_message(segment['message'])
+            #add ai message of reply if exists or else an empty string in one line
+            if segment['reply']:
+                history.add_ai_message(segment['reply'])
+    history.add_user_message(message)
+    return history
