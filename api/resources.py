@@ -1,7 +1,7 @@
 from flask import request
 from flask_restx import Resource
 from . import api
-from models import Conversation, create_conversation
+from models import Conversation, create_conversation, get_conversations
 
 @api.route('/hello')
 class HelloWorld(Resource):
@@ -9,13 +9,25 @@ class HelloWorld(Resource):
         return {'hello': 'from blueprint!'}
 
 
+@api.route('/get_conversations', methods=['GET'])
+class GetConversations(Resource):
+    def get(self):
+        conversations = get_conversations()
+        return [{'id': conversation.id, 'name': conversation.name} for conversation in conversations]
+
+@api.route('/get_conversation/<int:id>', methods=['GET'])
+class GetConversation(Resource):
+    def get(self, id):
+        conversation = Conversation.query.get(id)
+        return {'id': conversation.id, 'name': conversation.name, 'created_date': conversation.created_date.isoformat()}
+
 @api.route('/new_conversation', methods=['POST'])
 class NewConversation(Resource):
     def post(self):
         try:
             data = request.get_json()
             conversation = create_conversation(data.get('name', ''))
-            return {'conversation id': conversation.id}
+            return {'conversation_id': conversation.id}
         except Exception as e:
             return {'error': str(e)}
     
