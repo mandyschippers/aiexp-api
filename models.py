@@ -50,3 +50,9 @@ def create_segment(conversation_id, message):
     db.session.add(segment)
     db.session.commit()
     return segment
+
+def update_segment_reply(segment_id, reply):
+    segment = ConversationSegment.query.get(segment_id)
+    segment.reply = reply
+    db.session.commit()
+    return segment
