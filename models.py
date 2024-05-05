@@ -39,3 +39,14 @@ def create_conversation(name):
 #get a list of all conversations in the database
 def get_conversations():
     return Conversation.query.all()
+
+#create the next segment in a conversation with id conversation_id
+def create_segment(conversation_id, message):
+    print('conversation_id:', conversation_id)
+    print('message:', message)
+    conversation = Conversation.query.get(conversation_id)
+    segment = ConversationSegment(message=message)
+    conversation.segments.append(segment)
+    db.session.add(segment)
+    db.session.commit()
+    return segment
