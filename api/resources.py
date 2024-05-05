@@ -1,7 +1,9 @@
 from flask import request
 from flask_restx import Resource
 from . import api
-from models import Conversation, create_conversation, get_conversations, create_segment
+from models import Conversation, create_conversation, get_conversations, create_segment, update_segment_reply
+from config import Config
+from langchain_openai import ChatOpenAI
 
 @api.route('/hello')
 class HelloWorld(Resource):
@@ -38,10 +40,14 @@ class Message(Resource):
         data = request.get_json()
         conversation_id = data.get('conversation_id')
         message = data.get('message')
+        message_history = data.get('message_history')
         #create the next segment in the conversation
         segment = create_segment(conversation_id, message)
-
-        return {'received message': data.get('message', 'no message was provided') + 'from segment ' + str(segment.id) + ' in conversation ' + str(conversation_id)}
+        llm = ChatOpenAI(api_key=Config.OPENAI_API_KEY)
+        response = llm.invoke(message)
+        #save response.content to the segment
+        update_segment_reply(segment.id, response.content)
+        return {'received message': data.get('message', 'no message was provided') + 'with reply: ' + response.content + 'from segment ' + str(segment.id) + ' in conversation ' + str(conversation_id)}
     
 @api.route('/get_segments/<int:id>', methods=['GET'])
 class GetSegments(Resource):
