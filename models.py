@@ -29,3 +29,13 @@ class SegmentSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     segments = db.relationship('ConversationSegment', back_populates='settings')  # Relation to ConversationSegment
 
+#need to be able to create a new conversation in the database
+def create_conversation(name):
+    conversation = Conversation(name=name)
+    db.session.add(conversation)
+    db.session.commit()
+    return conversation
+
+#get a list of all conversations in the database
+def get_conversations():
+    return Conversation.query.all()
