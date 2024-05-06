@@ -30,10 +30,7 @@ class SegmentSettings(db.Model):
                 'name': self.model.model_name,
                 'description': self.model.model_description
             } if self.model else None,
-            'modules': [
-                {'id': module.id, 'name': module.module_name, 'description': module.module_description}
-                for module in self.modules
-            ] if self.modules else [],
+            'modules': [module.id for module in self.modules] if self.modules else None,
         }
 
 # Class table for ModelSetting table - models have a one to many relationship to SegmentSettings
