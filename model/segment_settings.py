@@ -20,6 +20,22 @@ class SegmentSettings(db.Model):
     modules = db.relationship('ModuleSetting', secondary=module_settings_join, back_populates='segment_settings')  # Relation to ModuleSetting
     segments = db.relationship('ConversationSegment', secondary=segment_settings_segment_table, back_populates='settings')  # Relation to ConversationSegment
 
+    def to_dict(self):
+        """Return a dictionary representation of SegmentSettings."""
+        return {
+            'id': self.id,
+            'model_id': self.model_id,
+            'model': {
+                'id': self.model.id,
+                'name': self.model.model_name,
+                'description': self.model.model_description
+            } if self.model else None,
+            'modules': [
+                {'id': module.id, 'name': module.module_name, 'description': module.module_description}
+                for module in self.modules
+            ] if self.modules else [],
+        }
+
 # Class table for ModelSetting table - models have a one to many relationship to SegmentSettings
 class ModelSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -70,3 +86,8 @@ def update_segment_settings(segment_id, model_id, module_id):
         return segment_settings
     else:
         raise ValueError("SegmentSettings not found")
+
+#function to get segment settings in a nicely formatted way
+def get_segment_settings(segment_settings_id):
+    segment_settings = SegmentSettings.query.get(segment_settings_id)
+    return segment_settings.to_dict() if segment_settings else None
