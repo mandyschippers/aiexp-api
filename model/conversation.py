@@ -1,5 +1,6 @@
 from factory import db
 import datetime
+from model.segment_settings import SegmentSettings, create_segment_settings
 
 # Association table for Conversation and ConversationSegment
 conversation_segment_table = db.Table('conversation_segment_join',
@@ -24,10 +25,7 @@ class ConversationSegment(db.Model):
     settings_id = db.Column(db.Integer, db.ForeignKey('segment_settings.id')) # Foreign key to SegmentSettings
     settings = db.relationship('SegmentSettings', back_populates='segments')  # Relation to SegmentSettings
 
-# Class table for SegmentSettings - a segment has one segment settings, but a segment settings can be used by multiple segments
-class SegmentSettings(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    segments = db.relationship('ConversationSegment', back_populates='settings')  # Relation to ConversationSegment
+
 
 #need to be able to create a new conversation in the database
 def create_conversation(name):
@@ -41,11 +39,17 @@ def get_conversations():
     return Conversation.query.all()
 
 #create the next segment in a conversation with id conversation_id
-def create_segment(conversation_id, message):
-    print('conversation_id:', conversation_id)
-    print('message:', message)
+def create_segment(conversation_id, message, segment_settings):
     conversation = Conversation.query.get(conversation_id)
     segment = ConversationSegment(message=message)
+    if segment_settings:
+        segment_settings = create_segment_settings(segment_settings)
+        segment.settings = segment_settings
+    #else if conversation has at least one segment, use the settings from the last segment
+    elif conversation.segments:
+        segment.settings = conversation.segments[-1].settings
+    else:
+        segment.settings = get_standard_settings()
     conversation.segments.append(segment)
     db.session.add(segment)
     db.session.commit()
@@ -56,3 +60,6 @@ def update_segment_reply(segment_id, reply):
     segment.reply = reply
     db.session.commit()
     return segment
+
+def get_standard_settings():
+    return SegmentSettings.query.get(1)

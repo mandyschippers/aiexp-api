@@ -14,7 +14,8 @@ def create_app(config_class='config.Config'):
     db.init_app(app)
     migrate.init_app(app, db)
 
-    from model.conversation import Conversation, ConversationSegment, SegmentSettings
+    from model.conversation import Conversation, ConversationSegment
+    from model.segment_settings import SegmentSettings, ModelSetting, ModuleSetting
 
     CORS(app)
     JWTManager(app)

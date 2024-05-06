@@ -34,6 +34,8 @@ The application is built using the Flask web framework and SQLAlchemy ORM (Objec
     pip install -r requirements.txt
     ```
 
+3a. **rename config.template.py to config.py and paste your parameters**:
+
 4. **Run the Application**:
 
     ```bash
@@ -48,7 +50,7 @@ The application is built using the Flask web framework and SQLAlchemy ORM (Objec
 
 ```bash
 FLASK_APP=factory:create_app flask db init
-FLASK_APP=factory:create_app flask migrate -m "migration message"
+FLASK_APP=factory:create_app flask db migrate -m "migration message"
 FLASK_APP=factory:create_app flask db upgrade
 ```
 
