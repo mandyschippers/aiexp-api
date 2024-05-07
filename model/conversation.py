@@ -1,6 +1,6 @@
 from factory import db
 import datetime
-from model.segment_settings import SegmentSettings, create_segment_settings
+from model.segment_settings import SegmentSettings, create_segment_settings, segment_settings_segment_table
 
 # Association table for Conversation and ConversationSegment
 conversation_segment_table = db.Table('conversation_segment_join',
@@ -23,9 +23,9 @@ class ConversationSegment(db.Model):
     created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     conversations = db.relationship('Conversation', secondary=conversation_segment_table, back_populates='segments')
     settings_id = db.Column(db.Integer, db.ForeignKey('segment_settings.id')) # Foreign key to SegmentSettings
-    settings = db.relationship('SegmentSettings', back_populates='segments')  # Relation to SegmentSettings
-
-
+    settings = db.relationship('SegmentSettings', 
+                                secondary=segment_settings_segment_table, 
+                                back_populates='segments')
 
 #need to be able to create a new conversation in the database
 def create_conversation(name):
@@ -44,7 +44,6 @@ def create_segment(conversation_id, message, segment_settings):
     segment = ConversationSegment(message=message)
     if segment_settings:
         segment_settings = create_segment_settings(segment_settings)
-        segment.settings = segment_settings
     #else if conversation has at least one segment, use the settings from the last segment
     elif conversation.segments:
         segment.settings = conversation.segments[-1].settings

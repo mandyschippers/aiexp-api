@@ -15,6 +15,7 @@ module_settings_join = db.Table('module_settings_join',
 # Class table for SegmentSettings - one segment settings can be used by multiple segments
 class SegmentSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    segment_id = db.Column(db.Integer, db.ForeignKey('conversation_segment.id'))  # Foreign key to ConversationSegment
     model_id = db.Column(db.Integer, db.ForeignKey('model_setting.id'))  # Foreign key to ModelSetting
     model = db.relationship('ModelSetting', back_populates='segment_settings')  # Relation to ModelSetting
     modules = db.relationship('ModuleSetting', secondary=module_settings_join, back_populates='segment_settings')  # Relation to ModuleSetting
@@ -30,7 +31,7 @@ class SegmentSettings(db.Model):
                 'name': self.model.model_name,
                 'description': self.model.model_description
             } if self.model else None,
-            'modules': [module.id for module in self.modules] if self.modules else None,
+            'modules': get_module_options([module.id for module in self.modules])
         }
 
 # Class table for ModelSetting table - models have a one to many relationship to SegmentSettings
@@ -57,9 +58,10 @@ def get_module_by_id(module_id):
 
 # Function to create a SegmentSettings instance
 def create_segment_settings(settings):
+    module_instances = ModuleSetting.query.filter(ModuleSetting.id.in_(settings.get('modules'))).all()
     segment_settings = SegmentSettings(
         model_id=settings.get('model_id'),
-        module_id=settings.get('module_id')
+        modules=module_instances
     )
     db.session.add(segment_settings)
     try:
@@ -88,3 +90,24 @@ def update_segment_settings(segment_id, model_id, module_id):
 def get_segment_settings(segment_settings_id):
     segment_settings = SegmentSettings.query.get(segment_settings_id)
     return segment_settings.to_dict() if segment_settings else None
+
+#get all module settings and set checked to true if it is in selected_modules
+def get_module_options(selected_modules):
+    options = ModuleSetting.query.all()
+    return [{'id': option.id, 'name': option.module_name, 'description': option.module_description, 'checked': option.id in selected_modules} for option in options]
+
+def update_segment_settings(segment_id, model_id, modules):
+    segment_settings = SegmentSettings.query.filter_by(id=segment_id).first()
+    if segment_settings:
+        segment_settings.model_id = model_id
+        # Fetch module instances from the database
+        module_instances = ModuleSetting.query.filter(ModuleSetting.id.in_(modules)).all()
+        segment_settings.modules = module_instances
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise e
+        return segment_settings.to_dict()
+    else:
+        raise ValueError("SegmentSettings not found")

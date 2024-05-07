@@ -1,9 +1,11 @@
 from flask_restx import Resource
 from . import api
+from flask import request
 from model.segment_settings import (
     ModelSetting,
     ModuleSetting,
-    get_segment_settings
+    get_segment_settings,
+    update_segment_settings
 )
 
 @api.route('/get_segment_settings/<int:id>', methods=['GET'])

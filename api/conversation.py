@@ -79,7 +79,7 @@ class GetSegments(Resource):
     def get(self, id):
         conversation = Conversation.query.get(id)
         segments = conversation.segments
-        return [{'id': segment.id, 'message': segment.message, 'reply': segment.reply, 'segment_settings_id': segment.settings.id} for segment in segments]
+        return [{'id': segment.id, 'message': segment.message, 'reply': segment.reply, 'segment_settings_id': segment.settings_id} for segment in segments]
     
 def create_chain_from_segments(segments, message):
     history = ChatMessageHistory()
