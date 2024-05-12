@@ -1,6 +1,6 @@
 from factory import db
 import datetime
-from model.segment_settings import SegmentSettings, create_segment_settings, segment_settings_segment_table
+from model.segment_settings import SegmentSettings, create_segment_settings
 
 # Association table for Conversation and ConversationSegment
 conversation_segment_table = db.Table('conversation_segment_join',
@@ -22,10 +22,9 @@ class ConversationSegment(db.Model):
     reply = db.Column(db.Text)
     created_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     conversations = db.relationship('Conversation', secondary=conversation_segment_table, back_populates='segments')
-    settings_id = db.Column(db.Integer, db.ForeignKey('segment_settings.id')) # Foreign key to SegmentSettings
-    settings = db.relationship('SegmentSettings', 
-                                secondary=segment_settings_segment_table, 
-                                back_populates='segments')
+    settings_id = db.Column(db.Integer, db.ForeignKey('segment_settings.id'))
+    settings = db.relationship('SegmentSettings', back_populates='segments')
+
 
 #need to be able to create a new conversation in the database
 def create_conversation(name):
@@ -41,18 +40,34 @@ def get_conversations():
 #create the next segment in a conversation with id conversation_id
 def create_segment(conversation_id, message, segment_settings):
     conversation = Conversation.query.get(conversation_id)
-    segment = ConversationSegment(message=message)
+    if conversation is None:
+        raise ValueError("Conversation not found")
+    
+    new_segment = ConversationSegment(message=message)
+    
     if segment_settings:
-        segment_settings = create_segment_settings(segment_settings)
-    #else if conversation has at least one segment, use the settings from the last segment
+        settings_instance = create_segment_settings(segment_settings)
+        new_segment.settings = settings_instance
+        #else if conversation has at least one segment, use the settings from the last segment
     elif conversation.segments:
-        segment.settings = conversation.segments[-1].settings
+        last_segment = conversation.segments[-1]
+        new_segment.settings = last_segment.settings
     else:
-        segment.settings = get_standard_settings()
-    conversation.segments.append(segment)
-    db.session.add(segment)
-    db.session.commit()
-    return segment
+        standard_settings = get_standard_settings()
+        if standard_settings is None:
+            raise ValueError("Standard settings not found")
+        new_segment.settings = standard_settings
+
+    conversation.segments.append(new_segment)
+
+    db.session.add(new_segment)
+    try:
+        db.session.commit()
+    except Exception as e:  
+        db.session.rollback()
+        raise e
+    
+    return new_segment
 
 def update_segment_reply(segment_id, reply):
     segment = ConversationSegment.query.get(segment_id)
