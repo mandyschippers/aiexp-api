@@ -46,13 +46,10 @@ class Message(Resource):
         conversation_id = data.get('conversation_id')
         message = data.get('message')
         message_history = data.get('message_history')
-        #segment settings from data or else None
-        segment_settings = data.get('segment_settings', None)
         #assemble chat history from segments
         history = create_chain_from_segments(message_history, message)
-        #get settings for the segment
         #create the next segment in the conversation
-        segment = create_segment(conversation_id, message, segment_settings)
+        segment = create_segment(conversation_id, message)
         #call the LLM
         llm = ChatOpenAI(api_key=Config.OPENAI_API_KEY)
         prompt = ChatPromptTemplate.from_messages(
@@ -79,7 +76,7 @@ class GetSegments(Resource):
     def get(self, id):
         conversation = Conversation.query.get(id)
         segments = conversation.segments
-        return [{'id': segment.id, 'message': segment.message, 'reply': segment.reply, 'segment_settings_id': segment.settings_id} for segment in segments]
+        return [{'id': segment.id, 'message': segment.message, 'reply': segment.reply} for segment in segments]
     
 def create_chain_from_segments(segments, message):
     history = ChatMessageHistory()

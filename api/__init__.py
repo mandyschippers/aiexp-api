@@ -6,4 +6,3 @@ api = Api(api_blueprint, title='AIExp API', version='1.0', description='AIExp AP
 
 from .resources import *  
 from .conversation import *
-from .segment_settings import *
